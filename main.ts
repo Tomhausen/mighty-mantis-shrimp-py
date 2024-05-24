@@ -1,3 +1,8 @@
+//  week 1
+//  gm1 checkpoint system and lives 7
+//  bh1 scrolling background 4/3 - add extension
+//  bh2 destroy some rock obstacles - edit tilemap then code 3
+//  bh3 animate lava tiles 2/3
 namespace SpriteKind {
     export const enemy_projectile = SpriteKind.create()
 }
@@ -15,19 +20,45 @@ let gravity = 8
 let jump_count = 2
 let facing_right = true
 //  setup
-scene.setBackgroundColor(6)
+//  bh1
+//  scene.set_background_color(6) # comment out
+scene.setBackgroundImage(assets.image`background`)
+scroller.scrollBackgroundWithCamera(scroller.CameraScrollMode.OnlyHorizontal)
+//  /bh1
+//  gm1
+info.setLife(3)
+//  /gm1
+//  bh3
+function animate_lava() {
+    let effect_sprite: Sprite;
+    for (let lava_tile of tiles.getTilesByType(assets.tile`lava`)) {
+        effect_sprite = sprites.create(image.create(1, 1))
+        tiles.placeOnTile(effect_sprite, lava_tile)
+        effect_sprite.y -= 8
+        effect_sprite.startEffect(effects.bubbles)
+    }
+}
+
+//  /bh3
 function load_level() {
     let urchin: Sprite;
     shrimp.setVelocity(0, 0)
     scene.setTileMapLevel(levels[level - 1])
     tiles.placeOnRandomTile(shrimp, assets.tile`player spawn`)
+    //  gm1
+    //  tiles.set_tile_at(shrimp.tilemap_location(), image.create(16, 16)) # remove
+    tiles.setTileAt(shrimp.tilemapLocation(), assets.tile`checkpoint collected`)
+    //  /gm1
     for (let urchin_tile of tiles.getTilesByType(assets.tile`enemy spawn`)) {
         urchin = sprites.create(assets.image`urchin`, SpriteKind.Enemy)
         tiles.placeOnTile(urchin, urchin_tile)
         tiles.setTileAt(urchin_tile, image.create(16, 16))
     }
+    //  bh3
+    animate_lava()
 }
 
+//  /bh3
 load_level()
 controller.A.onEvent(ControllerButtonEvent.Pressed, function throttle_fire() {
     timer.throttle("player fire", 300, function player_fire() {
@@ -52,12 +83,49 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function jump() {
     }
     
 })
-sprites.onOverlap(SpriteKind.Player, SpriteKind.enemy_projectile, function hit(shrimp: Sprite, spine: Sprite) {
-    game.over(false)
-})
+//  gm1
+function take_damage() {
+    info.changeLifeBy(-1)
+    shrimp.setVelocity(0, 0)
+    tiles.placeOnRandomTile(shrimp, assets.tile`checkpoint collected`)
+}
+
+//  /gm1
+function hit(shrimp: any, spine: any) {
+    //  gm1
+    //  game.over(False) # remove
+    timer.throttle("take damage", 1000, take_damage)
+}
+
+//  /gm1
+//  sprites.on_overlap(SpriteKind.player, SpriteKind.enemy_projectile, hit)
+//  /gm1
 scene.onOverlapTile(SpriteKind.Player, assets.tile`lava`, function hit_lava(shrimp: Sprite, location: tiles.Location) {
-    game.over(false)
+    //  gm1
+    //  game.over(False) # remove
+    timer.throttle("take damage", 1000, take_damage)
 })
+//  gm1
+scene.onOverlapTile(SpriteKind.Player, assets.tile`checkpoint uncollected`, function reach_checkpoint(shrimp: Sprite, checkpoint: tiles.Location) {
+    for (let checkpoint_collected of tiles.getTilesByType(assets.tile`checkpoint collected`)) {
+        tiles.setTileAt(checkpoint_collected, image.create(16, 16))
+    }
+    tiles.setTileAt(checkpoint, assets.tile`checkpoint collected`)
+})
+//  /gm1
+//  bh2
+scene.onHitWall(SpriteKind.Projectile, function hit_wall(proj: Sprite, location: tiles.Location) {
+    let effect_sprite: Sprite;
+    if (tiles.tileImageAtLocation(location).equals(assets.tile`breakable rock`)) {
+        tiles.setTileAt(location, image.create(16, 16))
+        tiles.setWallAt(location, false)
+        effect_sprite = sprites.create(assets.tile`breakable rock`)
+        tiles.placeOnTile(effect_sprite, location)
+        effect_sprite.destroy(effects.disintegrate, 500)
+    }
+    
+})
+//  /bh2
 scene.onOverlapTile(SpriteKind.Player, assets.tile`level end`, function next_level() {
     
     if (level == levels.length) {
