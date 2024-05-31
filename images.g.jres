@@ -34,6 +34,16 @@
         "mimeType": "image/x-mkcd-f4",
         "displayName": "coin"
     },
+    "image8": {
+        "data": "hwQQABAAAAAAAMzMzAAAAADAM8wzDMvMwDwzYzOzVcU8NjNjM7PEzGwzM2MzzEwEwDMzZsNVxAzAM/zPw7VVxcDD9V+8u1XFwMZVVVVEVcUAbMw8VUXLxQDAZsZTRUTMAADMPFVFy8UAwFVVVbRVxQDA9V/LRVXFAAD7v8BVVMUAAAAAALzMDA==",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "enemy crab"
+    },
+    "image9": {
+        "data": "hwQgABAAAAAAAADw/wAAAAAAAPC7DwAAAAAAv7z7AAAAAPC7u8EPAAAA8LsbwfwAAAC/uxvBwQAAAL+7ETPDAAAAv7sRE8wAAAC/+x/MEQwAAL/7HxwRDAD8vLsREREMwMy8vBsR/AzAzczLvLu7D9y9vLy7u9v83Lu8y7u7u/2/y7y7u8u/+8//v7u7zMz7/wDPu8vMzfwAAPDMzMzdDAAA8MzMzM0AAADwzMy8zQAAAADPzNwMAAAAAM/MvAwAAAAA8M/8AAAAAADMv/wAAAAAwN27vA8AAADAu8u8+wAAALy7/8+7DwAAvPwA8L8PAADMAAAA8A8AAAAAAAAAAAAAAAAAAAAA",
+        "mimeType": "image/x-mkcd-f4",
+        "displayName": "shark"
+    },
     "anim2": {
         "namespace": "myAnimations",
         "id": "anim2",

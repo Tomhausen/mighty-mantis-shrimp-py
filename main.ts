@@ -3,10 +3,22 @@
 //  bh1 scrolling background 4/3 - add extension
 //  bh2 destroy some rock obstacles - edit tilemap then code 3
 //  bh3 animate lava tiles 2/3
+//  week 2
+//  gm2 moving platforms 6 place on tilemap
+//  bh4 sharks that swin across the screen 6
+//  bh5 new level 4 - make tilemap
+//  bh6 level save 1/2
 namespace SpriteKind {
     export const enemy_projectile = SpriteKind.create()
+    //  gm2
+    export const moving_platform = SpriteKind.create()
+    export const platform_hitbox = SpriteKind.create()
+    //  /gm2
+    //  bh4
+    export const floating_enemy = SpriteKind.create()
 }
 
+//  /bh4
 //  sprites
 let shrimp = sprites.create(assets.image`shrimp right`, SpriteKind.Player)
 shrimp.ay = 325
@@ -14,21 +26,16 @@ scene.cameraFollowSprite(shrimp)
 characterAnimations.runFrames(shrimp, [assets.image`shrimp right`], 1, characterAnimations.rule(Predicate.FacingRight))
 characterAnimations.runFrames(shrimp, [assets.image`shrimp left`], 1, characterAnimations.rule(Predicate.FacingLeft))
 //  variables
-let levels = [assets.tilemap`level 1`, assets.tilemap`level 2`, assets.tilemap`level 3`]
-let level = 2
+let levels = [assets.tilemap`level 1`, assets.tilemap`level 2`, assets.tilemap`level 3`, assets.tilemap`level 4`]
+//  bh5
+let level = 4
 let gravity = 8
 let jump_count = 2
 let facing_right = true
 //  setup
-//  bh1
-//  scene.set_background_color(6) # comment out
 scene.setBackgroundImage(assets.image`background`)
 scroller.scrollBackgroundWithCamera(scroller.CameraScrollMode.OnlyHorizontal)
-//  /bh1
-//  gm1
 info.setLife(3)
-//  /gm1
-//  bh3
 function animate_lava() {
     let effect_sprite: Sprite;
     for (let lava_tile of tiles.getTilesByType(assets.tile`lava`)) {
@@ -39,26 +46,61 @@ function animate_lava() {
     }
 }
 
-//  /bh3
+//  gm2
+function make_moving_platforms() {
+    let moving_platform: Sprite;
+    let hitbox: Sprite;
+    for (let moving_platform_tile of tiles.getTilesByType(assets.tile`moving platform`)) {
+        moving_platform = sprites.create(assets.tile`moving platform`, SpriteKind.moving_platform)
+        tiles.placeOnTile(moving_platform, moving_platform_tile)
+        tiles.setTileAt(moving_platform_tile, image.create(16, 16))
+        moving_platform.setFlag(SpriteFlag.BounceOnWall, true)
+        moving_platform.vx = 30
+        hitbox = sprites.create(image.create(16, 4), SpriteKind.platform_hitbox)
+        sprites.setDataSprite(hitbox, "platform", moving_platform)
+        hitbox.image.fill(1)
+        hitbox.setFlag(SpriteFlag.Invisible, true)
+    }
+}
+
+//  /gm2
+//  bh6
+function load_save() {
+    
+    if (game.ask("Would you like to load your previous game?")) {
+        if (database.existsKey("level")) {
+            level = database.getNumberValue("level")
+        } else {
+            game.splash("No save file found")
+        }
+        
+    }
+    
+}
+
+load_save()
+//  /bh6
 function load_level() {
     let urchin: Sprite;
     shrimp.setVelocity(0, 0)
     scene.setTileMapLevel(levels[level - 1])
     tiles.placeOnRandomTile(shrimp, assets.tile`player spawn`)
-    //  gm1
-    //  tiles.set_tile_at(shrimp.tilemap_location(), image.create(16, 16)) # remove
     tiles.setTileAt(shrimp.tilemapLocation(), assets.tile`checkpoint collected`)
-    //  /gm1
+    sprites.destroyAllSpritesOfKind(SpriteKind.Enemy)
     for (let urchin_tile of tiles.getTilesByType(assets.tile`enemy spawn`)) {
         urchin = sprites.create(assets.image`urchin`, SpriteKind.Enemy)
         tiles.placeOnTile(urchin, urchin_tile)
         tiles.setTileAt(urchin_tile, image.create(16, 16))
     }
-    //  bh3
     animate_lava()
+    //  gm2
+    make_moving_platforms()
+    //  /gm2
+    //  bh6
+    database.setNumberValue("level", level)
 }
 
-//  /bh3
+//  /bh6
 load_level()
 controller.A.onEvent(ControllerButtonEvent.Pressed, function throttle_fire() {
     timer.throttle("player fire", 300, function player_fire() {
@@ -83,36 +125,29 @@ controller.up.onEvent(ControllerButtonEvent.Pressed, function jump() {
     }
     
 })
-//  gm1
 function take_damage() {
     info.changeLifeBy(-1)
     shrimp.setVelocity(0, 0)
     tiles.placeOnRandomTile(shrimp, assets.tile`checkpoint collected`)
 }
 
-//  /gm1
-function hit(shrimp: any, spine: any) {
-    //  gm1
-    //  game.over(False) # remove
+function hit(shrimp: Sprite, spine: Sprite) {
     timer.throttle("take damage", 1000, take_damage)
 }
 
-//  /gm1
-//  sprites.on_overlap(SpriteKind.player, SpriteKind.enemy_projectile, hit)
-//  /gm1
+sprites.onOverlap(SpriteKind.Player, SpriteKind.enemy_projectile, hit)
+//  bh4
+sprites.onOverlap(SpriteKind.Player, SpriteKind.floating_enemy, hit)
+//  /bh4
 scene.onOverlapTile(SpriteKind.Player, assets.tile`lava`, function hit_lava(shrimp: Sprite, location: tiles.Location) {
-    //  gm1
-    //  game.over(False) # remove
     timer.throttle("take damage", 1000, take_damage)
 })
-//  gm1
 scene.onOverlapTile(SpriteKind.Player, assets.tile`checkpoint uncollected`, function reach_checkpoint(shrimp: Sprite, checkpoint: tiles.Location) {
     for (let checkpoint_collected of tiles.getTilesByType(assets.tile`checkpoint collected`)) {
         tiles.setTileAt(checkpoint_collected, image.create(16, 16))
     }
     tiles.setTileAt(checkpoint, assets.tile`checkpoint collected`)
 })
-//  /gm1
 //  bh2
 scene.onHitWall(SpriteKind.Projectile, function hit_wall(proj: Sprite, location: tiles.Location) {
     let effect_sprite: Sprite;
@@ -135,11 +170,16 @@ scene.onOverlapTile(SpriteKind.Player, assets.tile`level end`, function next_lev
     level += 1
     load_level()
 })
-sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, function enemy_hit(proj: Sprite, enemy: Sprite) {
+function enemy_hit(proj: Sprite, enemy: Sprite) {
     info.changeScoreBy(10)
     proj.destroy()
     enemy.destroy()
-})
+}
+
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, enemy_hit)
+//  bh4
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.floating_enemy, enemy_hit)
+//  /bh4
 function urchin_fire(urchin: any) {
     let spine: Sprite;
     let angle: number;
@@ -161,6 +201,44 @@ game.onUpdateInterval(3000, function urchin_behaviour() {
         urchin_fire(urchin)
     }
 })
+//  bh4
+function shark_spawn() {
+    let shark = sprites.create(assets.image`shark`, SpriteKind.floating_enemy)
+    if (randint(1, 2) == 1) {
+        shark.image.flipX()
+        shark.right = 1
+        shark.vx = 50
+    } else {
+        shark.left = tilesAdvanced.getTilemapWidth() * 16 - 1
+        shark.vx = -50
+    }
+    
+    if (spriteutils.distanceBetween(shark, shrimp) < 120) {
+        shark.destroy()
+        shark_spawn
+    }
+    
+    shark.y = shrimp.y
+    sprites.setDataNumber(shark, "start y", shark.y)
+    shark.setFlag(SpriteFlag.GhostThroughWalls, true)
+}
+
+game.onUpdateInterval(1000, shark_spawn)
+//  /bh4
+//  bh4
+function shark_behaviour() {
+    let start_y: number;
+    for (let shark of sprites.allOfKind(SpriteKind.floating_enemy)) {
+        if (shark.left > tilesAdvanced.getTilemapWidth() * 16 || shark.right < 0) {
+            shark.destroy()
+        }
+        
+        start_y = sprites.readDataNumber(shark, "start y")
+        shark.y = Math.sin(shark.x / 20) * 20 + start_y
+    }
+}
+
+//  /bh4
 function x_movement() {
     
     if (controller.left.isPressed()) {
@@ -182,7 +260,52 @@ function y_movement() {
     
 }
 
+//  gm2
+sprites.onOverlap(SpriteKind.Player, SpriteKind.moving_platform, function hit_moving_platform(shrimp: Sprite, platform: Sprite) {
+    if (Math.abs(platform.x - shrimp.x) > Math.abs(platform.y - shrimp.y)) {
+        shrimp.vx = 0
+        while (shrimp.overlapsWith(platform)) {
+            shrimp.x -= Math.sign(platform.x - shrimp.x)
+            pause(0)
+        }
+    } else {
+        shrimp.vy = 0
+        while (shrimp.overlapsWith(platform)) {
+            shrimp.y -= Math.sign(platform.y - shrimp.y)
+            pause(0)
+        }
+    }
+    
+})
+//  /gm2
+//  gm2
+function use_moving_platform() {
+    let platform: Sprite;
+    let fps: number;
+    
+    for (let hitbox of sprites.allOfKind(SpriteKind.platform_hitbox)) {
+        platform = sprites.readDataSprite(hitbox, "platform")
+        hitbox.setPosition(platform.x, platform.top - 2)
+        if (shrimp.overlapsWith(hitbox)) {
+            jump_count = 0
+            fps = 1000 / spriteutils.getDeltaTime()
+            shrimp.x += platform.vx / fps
+            shrimp.ay = 0
+            return
+        }
+        
+    }
+    shrimp.ay = 325
+}
+
+//  /gm2
+//  /bh4
 game.onUpdate(function tick() {
     x_movement()
     y_movement()
+    //  gm2
+    use_moving_platform()
+    //  /gm2
+    //  bh4
+    shark_behaviour()
 })

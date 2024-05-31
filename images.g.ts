@@ -224,6 +224,44 @@ c d d 1 1 d d c
 . f d d d d f . 
 . . f f f f . . 
 `;
+            case "image8":
+            case "enemy crab":return img`
+. . . c c . . . . . . . . . . . 
+. . c 3 6 c c c c . . . . . . . 
+. . c 6 3 3 3 3 6 c . . . . . . 
+. c 3 3 3 3 3 c c 6 c . c c . . 
+c 3 3 3 3 3 c 5 5 c 6 c 5 5 b . 
+c 3 3 3 3 3 f f 5 c 6 c 5 f f . 
+c c 3 3 3 6 f f 5 c 6 c 5 f f . 
+c c 6 6 6 6 c 5 5 3 c 3 5 5 b . 
+c 3 3 3 3 3 3 c 5 5 3 5 5 b . . 
+c 3 3 3 3 c c b 5 5 5 5 5 c c . 
+. c 3 3 c 5 5 b 4 5 5 5 4 5 5 c 
+. . b b c 5 b b 4 4 4 4 b 4 5 b 
+. b 5 4 c 4 5 5 5 b 4 b 5 5 4 c 
+. c 5 c 4 c 5 5 5 c 4 c 5 5 5 c 
+. c 5 c 4 c 5 5 5 5 c 5 5 5 5 c 
+. c c c . . c c c c c c c c c . 
+`;
+            case "image9":
+            case "shark":return img`
+.............ccfff..............
+...........ccddbcf..............
+..........ccddbbf...............
+..........fccbbcf...............
+.....fffffccccccff.........ccc..
+...ffbbbbbbbcbbbbcfff....ccbbc..
+..fbbbbbbbbcbcbbbbcccff.cdbbc...
+ffbbbbbbffbbcbcbbbcccccfcdbbf...
+fbcbbb11ff1bcbbbbbcccccffbbf....
+fbbb11111111bbbbbcccccccbbcf....
+.fb11133cc11bbbbcccccccccccf....
+..fccc31c111bbbcccccbdbffbbcf...
+...fc13c111cbbbfcddddcc..fbbf...
+....fccc111fbdbbccdcc.....fbbf..
+........ccccfcdbbcc........fff..
+.............fffff..............
+`;
         }
         return null;
     })
