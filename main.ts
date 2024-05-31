@@ -8,17 +8,24 @@
 //  bh4 sharks that swin across the screen 6
 //  bh5 new level 4 - make tilemap
 //  bh6 level save 1/2
+//  week 3
+//  gm3 shrimp that patrols 9
+//  bh7 animate enemy dying and falling off 3
+//  bh8 ladder 5
+//  bh9 collectables - assets, tilemap, func, edit load, collect 5
 namespace SpriteKind {
     export const enemy_projectile = SpriteKind.create()
-    //  gm2
     export const moving_platform = SpriteKind.create()
     export const platform_hitbox = SpriteKind.create()
-    //  /gm2
-    //  bh4
     export const floating_enemy = SpriteKind.create()
+    //  gm3
+    export const patrolling_enemy = SpriteKind.create()
+    //  /gm3
+    //  bh7 if you did not do bh3
+    export const effect = SpriteKind.create()
 }
 
-//  /bh4
+//  /bh7
 //  sprites
 let shrimp = sprites.create(assets.image`shrimp right`, SpriteKind.Player)
 shrimp.ay = 325
@@ -27,8 +34,7 @@ characterAnimations.runFrames(shrimp, [assets.image`shrimp right`], 1, character
 characterAnimations.runFrames(shrimp, [assets.image`shrimp left`], 1, characterAnimations.rule(Predicate.FacingLeft))
 //  variables
 let levels = [assets.tilemap`level 1`, assets.tilemap`level 2`, assets.tilemap`level 3`, assets.tilemap`level 4`]
-//  bh5
-let level = 4
+let level = 3
 let jump_count = 2
 let facing_right = true
 //  setup
@@ -37,15 +43,15 @@ scroller.scrollBackgroundWithCamera(scroller.CameraScrollMode.OnlyHorizontal)
 info.setLife(3)
 function animate_lava() {
     let effect_sprite: Sprite;
+    sprites.destroyAllSpritesOfKind(SpriteKind.effect)
     for (let lava_tile of tiles.getTilesByType(assets.tile`lava`)) {
-        effect_sprite = sprites.create(image.create(1, 1))
+        effect_sprite = sprites.create(image.create(1, 1), SpriteKind.effect)
         tiles.placeOnTile(effect_sprite, lava_tile)
         effect_sprite.y -= 8
         effect_sprite.startEffect(effects.bubbles)
     }
 }
 
-//  gm2
 function make_moving_platforms() {
     let moving_platform: Sprite;
     let hitbox: Sprite;
@@ -62,8 +68,6 @@ function make_moving_platforms() {
     }
 }
 
-//  /gm2
-//  bh6
 function load_save() {
     
     if (game.ask("Would you like to load your previous game?")) {
@@ -78,7 +82,32 @@ function load_save() {
 }
 
 load_save()
-//  /bh6
+//  bh9
+function spawn_coins() {
+    let coin: Sprite;
+    sprites.destroyAllSpritesOfKind(SpriteKind.Food)
+    for (let coin_spawn of tiles.getTilesByType(assets.tile`coin spawn`)) {
+        coin = sprites.create(assets.image`coin`, SpriteKind.Food)
+        tiles.placeOnTile(coin, coin_spawn)
+        tiles.setTileAt(coin_spawn, image.create(16, 16))
+    }
+}
+
+//  /bh9
+//  gm3
+function make_crabs() {
+    let crab: Sprite;
+    sprites.allOfKind(SpriteKind.patrolling_enemy)
+    for (let crab_spawn of tiles.getTilesByType(assets.tile`enemy crab spawn`)) {
+        crab = sprites.create(assets.image`enemy crab`, SpriteKind.patrolling_enemy)
+        crab.setFlag(SpriteFlag.BounceOnWall, true)
+        crab.vx = 50
+        tiles.placeOnTile(crab, crab_spawn)
+        tiles.setTileAt(crab_spawn, image.create(16, 16))
+    }
+}
+
+//  /gm3
 function load_level() {
     let urchin: Sprite;
     shrimp.setVelocity(0, 0)
@@ -92,14 +121,16 @@ function load_level() {
         tiles.setTileAt(urchin_tile, image.create(16, 16))
     }
     animate_lava()
-    //  gm2
     make_moving_platforms()
-    //  /gm2
-    //  bh6
     database.setNumberValue("level", level)
+    //  gm3
+    make_crabs()
+    //  /gm3
+    //  bh9
+    spawn_coins()
 }
 
-//  /bh6
+//  /bh9
 load_level()
 controller.A.onEvent(ControllerButtonEvent.Pressed, function throttle_fire() {
     timer.throttle("player fire", 300, function player_fire() {
@@ -130,24 +161,42 @@ function take_damage() {
     tiles.placeOnRandomTile(shrimp, assets.tile`checkpoint collected`)
 }
 
-function hit(shrimp: Sprite, spine: Sprite) {
+function hit(shrimp: any, spine: any) {
     timer.throttle("take damage", 1000, take_damage)
 }
 
-sprites.onOverlap(SpriteKind.Player, SpriteKind.enemy_projectile, hit)
-//  bh4
-sprites.onOverlap(SpriteKind.Player, SpriteKind.floating_enemy, hit)
-//  /bh4
+//  sprites.on_overlap(SpriteKind.player, SpriteKind.enemy_projectile, hit)
+//  sprites.on_overlap(SpriteKind.player, SpriteKind.floating_enemy, hit)
+//  gm3
+//  sprites.on_overlap(SpriteKind.player, SpriteKind.patrolling_enemy, hit)
+//  /gm3
+//  bh9
+sprites.onOverlap(SpriteKind.Player, SpriteKind.Food, function get_coin(shrimp: Sprite, coin: Sprite) {
+    info.changeScoreBy(500)
+    music.powerUp.play()
+    coin.destroy()
+})
+//  /bh9
 scene.onOverlapTile(SpriteKind.Player, assets.tile`lava`, function hit_lava(shrimp: Sprite, location: tiles.Location) {
     timer.throttle("take damage", 1000, take_damage)
 })
+//  bh8
+scene.onOverlapTile(SpriteKind.Player, assets.tile`ladder`, function use_ladder(shrimp: Sprite, location: tiles.Location) {
+    shrimp.vy = 0
+    if (controller.up.isPressed()) {
+        shrimp.vy = -50
+    } else if (controller.down.isPressed()) {
+        shrimp.vy = 50
+    }
+    
+})
+//  /bh8
 scene.onOverlapTile(SpriteKind.Player, assets.tile`checkpoint uncollected`, function reach_checkpoint(shrimp: Sprite, checkpoint: tiles.Location) {
     for (let checkpoint_collected of tiles.getTilesByType(assets.tile`checkpoint collected`)) {
         tiles.setTileAt(checkpoint_collected, image.create(16, 16))
     }
     tiles.setTileAt(checkpoint, assets.tile`checkpoint collected`)
 })
-//  bh2
 scene.onHitWall(SpriteKind.Projectile, function hit_wall(proj: Sprite, location: tiles.Location) {
     let effect_sprite: Sprite;
     if (tiles.tileImageAtLocation(location).equals(assets.tile`breakable rock`)) {
@@ -159,7 +208,6 @@ scene.onHitWall(SpriteKind.Projectile, function hit_wall(proj: Sprite, location:
     }
     
 })
-//  /bh2
 scene.onOverlapTile(SpriteKind.Player, assets.tile`level end`, function next_level() {
     
     if (level == levels.length) {
@@ -169,16 +217,34 @@ scene.onOverlapTile(SpriteKind.Player, assets.tile`level end`, function next_lev
     level += 1
     load_level()
 })
+//  bh7
+function enemy_animate(enemy: Sprite) {
+    enemy.image.flipY()
+    for (let colour = 1; colour < 16; colour++) {
+        enemy.image.replace(colour, 1)
+    }
+    enemy.setKind(SpriteKind.effect)
+    enemy.setFlag(SpriteFlag.Ghost, true)
+    enemy.setFlag(SpriteFlag.AutoDestroy, true)
+    enemy.ay = 325
+    enemy.vy = -100
+}
+
+//  /bh7
 function enemy_hit(proj: Sprite, enemy: Sprite) {
     info.changeScoreBy(10)
     proj.destroy()
-    enemy.destroy()
+    //  bh7
+    //  enemy.destroy()
+    enemy_animate(enemy)
 }
 
+//  /bh7
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.Enemy, enemy_hit)
-//  bh4
 sprites.onOverlap(SpriteKind.Projectile, SpriteKind.floating_enemy, enemy_hit)
-//  /bh4
+//  gm3
+sprites.onOverlap(SpriteKind.Projectile, SpriteKind.patrolling_enemy, enemy_hit)
+//  /gm3
 function urchin_fire(urchin: any) {
     let spine: Sprite;
     let angle: number;
@@ -200,7 +266,6 @@ game.onUpdateInterval(3000, function urchin_behaviour() {
         urchin_fire(urchin)
     }
 })
-//  bh4
 function shark_spawn() {
     let shark = sprites.create(assets.image`shark`, SpriteKind.floating_enemy)
     if (randint(1, 2) == 1) {
@@ -223,8 +288,6 @@ function shark_spawn() {
 }
 
 game.onUpdateInterval(1000, shark_spawn)
-//  /bh4
-//  bh4
 function shark_behaviour() {
     let start_y: number;
     for (let shark of sprites.allOfKind(SpriteKind.floating_enemy)) {
@@ -237,7 +300,6 @@ function shark_behaviour() {
     }
 }
 
-//  /bh4
 function x_movement() {
     
     if (controller.left.isPressed()) {
@@ -259,7 +321,37 @@ function y_movement() {
     
 }
 
-//  gm2
+//  bh8
+function check_on_ladder() {
+    if (tiles.tileAtLocationEquals(shrimp.tilemapLocation(), assets.tile`ladder`)) {
+        shrimp.ay = 0
+    } else {
+        shrimp.ay = 325
+    }
+    
+}
+
+//  /bh8
+//  gm3
+function crab_behaviour() {
+    let location: tiles.Location;
+    let tile_infront: tiles.Location;
+    if (sprites.allOfKind(SpriteKind.patrolling_enemy).length < 1) {
+        return
+    }
+    
+    for (let crab of sprites.allOfKind(SpriteKind.patrolling_enemy)) {
+        location = crab.tilemapLocation()
+        tile_infront = tiles.getTileLocation(location.col, location.row + 1)
+        if (!tiles.tileAtLocationIsWall(tile_infront)) {
+            crab.vx *= -1
+            crab.image.flipX()
+        }
+        
+    }
+}
+
+//  /gm3
 sprites.onOverlap(SpriteKind.Player, SpriteKind.moving_platform, function hit_moving_platform(shrimp: Sprite, platform: Sprite) {
     if (Math.abs(platform.x - shrimp.x) > Math.abs(platform.y - shrimp.y)) {
         shrimp.vx = 0
@@ -276,8 +368,6 @@ sprites.onOverlap(SpriteKind.Player, SpriteKind.moving_platform, function hit_mo
     }
     
 })
-//  /gm2
-//  gm2
 function use_moving_platform() {
     let platform: Sprite;
     let fps: number;
@@ -297,14 +387,15 @@ function use_moving_platform() {
     shrimp.ay = 325
 }
 
-//  /gm2
-//  /bh4
+//  /bh8
 game.onUpdate(function tick() {
     x_movement()
     y_movement()
-    //  gm2
     use_moving_platform()
-    //  /gm2
-    //  bh4
     shark_behaviour()
+    //  gm3
+    crab_behaviour()
+    //  /gm3
+    //  bh8
+    check_on_ladder()
 })
