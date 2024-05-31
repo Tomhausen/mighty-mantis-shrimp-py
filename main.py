@@ -36,7 +36,6 @@ levels = [
     assets.tilemap("level 4") # bh5
 ]
 level = 4
-gravity = 8
 jump_count = 2
 facing_right = True
 

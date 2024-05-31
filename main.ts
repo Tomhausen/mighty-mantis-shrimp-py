@@ -29,7 +29,6 @@ characterAnimations.runFrames(shrimp, [assets.image`shrimp left`], 1, characterA
 let levels = [assets.tilemap`level 1`, assets.tilemap`level 2`, assets.tilemap`level 3`, assets.tilemap`level 4`]
 //  bh5
 let level = 4
-let gravity = 8
 let jump_count = 2
 let facing_right = true
 //  setup
